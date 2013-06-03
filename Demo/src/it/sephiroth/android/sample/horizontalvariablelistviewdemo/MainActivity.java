@@ -12,7 +12,6 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
-import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -97,12 +96,6 @@ public class MainActivity extends Activity {
 		
 		// let's select the first item by default
 		mList.setSelectedPosition( 0, false );
-	}
-
-	@Override
-	public boolean onCreateOptionsMenu( Menu menu ) {
-		getMenuInflater().inflate( R.menu.activity_main, menu );
-		return true;
 	}
 
 	class ListAdapter extends ArrayAdapter<String> {
