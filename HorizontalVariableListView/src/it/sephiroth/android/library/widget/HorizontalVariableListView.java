@@ -205,6 +205,7 @@ public class HorizontalVariableListView extends HorizontalListView implements On
 		mGesture = new GestureDetector( getContext(), mGestureListener );
 		mGesture.setIsLongpressEnabled( false );
 
+		setWillNotDraw( !isHorizontalScrollBarEnabled() );
 		setFocusable( true );
 		setFocusableInTouchMode( true );
 
@@ -259,6 +260,65 @@ public class HorizontalVariableListView extends HorizontalListView implements On
 		if ( getChildCount() > 0 ) {
 			drawEdges( canvas );
 		}
+	}
+
+	@Override
+	protected int computeHorizontalScrollOffset() {
+
+		final int firstPosition = mLeftViewIndex + getFirstVisibleChildIndex() + 1;
+		final int childCount = getVisibleChildCount();
+		if ( firstPosition >= 0 && childCount > 0 ) {
+			int index;
+			final int count = mAdapterItemCount;
+			if ( firstPosition == 0 ) {
+				index = 0;
+			} else if ( firstPosition + childCount == count ) {
+				index = count;
+			} else {
+				index = firstPosition + childCount / 2;
+			}
+			return (int) ( firstPosition + childCount * ( index / (float) count ) );
+		}
+		return 0;
+	}
+
+	@Override
+	protected int computeHorizontalScrollExtent() {
+		return 1;
+	}
+
+	@Override
+	protected int computeHorizontalScrollRange() {
+		return mAdapterItemCount;
+	}
+
+	private int getFirstVisibleChildIndex() {
+
+		final int scrollx = getScrollX();
+		final int width = getWidth();
+		final int count = getChildCount();
+		for ( int i = 0; i < count; ++i ) {
+			View view = getChildAt( i );
+			if ( view.getRight() > scrollx && view.getLeft() < scrollx + width ) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	private int getVisibleChildCount() {
+
+		int result = 0;
+		final int scrollx = getScrollX();
+		final int width = getWidth();
+		final int count = getChildCount();
+		for ( int i = 0; i < count; ++i ) {
+			View view = getChildAt( i );
+			if ( view.getRight() > scrollx && view.getLeft() < scrollx + width ) {
+				++result;
+			}
+		}
+		return result;
 	}
 
 	/**
