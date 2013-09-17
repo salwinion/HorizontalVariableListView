@@ -19,3 +19,7 @@ local.properties
 .gradle
 Demo/build
 HorizontalVariableListView/build
+
+# Idea files
+.idea
+*.iml
