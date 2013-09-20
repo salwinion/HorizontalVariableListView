@@ -1,150 +1,204 @@
 package it.sephiroth.android.sample.horizontalvariablelistviewdemo;
 
-import it.sephiroth.android.library.widget.HorizontalListView.OnLayoutChangeListener;
-import it.sephiroth.android.library.widget.HorizontalVariableListView;
-import it.sephiroth.android.library.widget.HorizontalVariableListView.OnItemClickedListener;
-import it.sephiroth.android.library.widget.HorizontalVariableListView.SelectionMode;
+import it.sephiroth.android.library.util.v11.MultiChoiceModeListener;
+import it.sephiroth.android.library.widget.HListView;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Gravity;
-import android.view.LayoutInflater;
+import android.util.SparseBooleanArray;
+import android.view.ActionMode;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemSelectedListener;
+import android.view.ViewGroup.LayoutParams;
 import android.widget.ArrayAdapter;
-import android.widget.TextView;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.ListView;
 
-public class MainActivity extends Activity {
-
-	private static final String LOG_TAG = "main-activity";
-
-	HorizontalVariableListView mList;
-	TextView mText;
+public class MainActivity extends Activity implements OnClickListener, MultiChoiceModeListener {
+	
+	private static final String LOG_TAG = "MainActivity";
+	HListView listView;
+	Button mButton1;
+	Button mButton2;
+	Button mButton3;
+	TestAdapter mAdapter;
 
 	@Override
-	public void onCreate( Bundle savedInstanceState ) {
+	protected void onCreate( Bundle savedInstanceState ) {
 		super.onCreate( savedInstanceState );
-		setContentView( R.layout.activity_main );
-
-		List<String> data = new ArrayList<String>();
-		for ( int i = 0; i < 40; i++ ) {
-			data.add( String.valueOf( i ) );
-		}
-
-		ListAdapter adapter = new ListAdapter( this, R.layout.view1, R.layout.divider, data );
-
-		// change the selection mode: single or multiple
-		mList.setSelectionMode( SelectionMode.Multiple );
-
-		mList.setOverScrollMode( HorizontalVariableListView.OVER_SCROLL_ALWAYS );
-		mList.setEdgeGravityY( Gravity.CENTER );
-		mList.setAdapter( adapter );
 		
-		// children gravity ( top, center, bottom )
-		mList.setGravity( Gravity.CENTER );
-
+		setContentView( R.layout.activity_main );
+		
+		List<String> items = new ArrayList<String>();
+		for( int i = 0; i < 50; i++ ) {
+			items.add( "Image " + i );
+		}
+		
+		mAdapter = new TestAdapter( this, R.layout.test_item_1, android.R.id.text1, items );
+		listView.setHeaderDividersEnabled( true );
+		listView.setFooterDividersEnabled( true );
+		
+		if( listView.getChoiceMode() == ListView.CHOICE_MODE_MULTIPLE_MODAL ) {
+			listView.setMultiChoiceModeListener( this );
+		}
+		
+		
+		listView.setAdapter( mAdapter );
+		
+		mButton1.setOnClickListener( this );
+		mButton2.setOnClickListener( this );
+		mButton3.setOnClickListener( this );
+		
+		Log.i( LOG_TAG, "choice mode: " + listView.getChoiceMode() );
 	}
-
+	
 	@Override
 	public void onContentChanged() {
 		super.onContentChanged();
-		mList = (HorizontalVariableListView) findViewById( R.id.list );
-		mText = (TextView) findViewById( R.id.text );
-
-		mList.setOnLayoutChangeListener( new OnLayoutChangeListener() {
-
-			@Override
-			public void onLayoutChange( boolean changed, int left, int top, int right, int bottom ) {
-				Log.d( LOG_TAG, "onLayoutChange: " + changed + ", " + bottom + ", " + top );
-				if ( changed ) {
-					mList.setEdgeHeight( bottom - top );
-				}
-			}
-		} );
-
-		mList.setOnItemClickedListener( new OnItemClickedListener() {
-
-			@Override
-			public boolean onItemClick( AdapterView<?> parent, View view, int position, long id ) {
-				Log.i( LOG_TAG, "onItemClick: " + position );
-
-				// item has been clicked, return true if you want the
-				// HorizontalVariableList to handle the event
-				// false otherwise
-				return true;
-			}
-		} );
-
-		mList.setOnItemSelectedListener( new OnItemSelectedListener() {
-
-			@Override
-			public void onItemSelected( AdapterView<?> parent, View view, int position, long id ) {
-				mText.setText( "item selected: " + position + ", selected items: " + mList.getSelectedPositions().length );
-			}
-
-			@Override
-			public void onNothingSelected( android.widget.AdapterView<?> parent ) {
-				mText.setText( "nothing selected" );
-			};
-
-		} );
+		listView = (HListView) findViewById( R.id.hListView1 );
+		mButton1 = (Button) findViewById( R.id.button1 );
+		mButton2 = (Button) findViewById( R.id.button2 );
+		mButton3 = (Button) findViewById( R.id.button3 );
 		
-		// let's select the first item by default
-		mList.setSelectedPosition( 0, false );
 	}
 
-	class ListAdapter extends ArrayAdapter<String> {
-
-		int resId1;
-		int resId2;
-
-		public ListAdapter( Context context, int textViewResourceId, int dividerResourceId, List<String> objects ) {
-			super( context, textViewResourceId, objects );
-			resId1 = textViewResourceId;
-			resId2 = dividerResourceId;
+	
+	@Override
+	public void onClick( View v ) {
+		final int id = v.getId();
+		
+		if( id == mButton1.getId() ) {
+			addElements();
+		} else if( id == mButton2.getId() ) {
+			removeElements();
+		} else if( id == mButton3.getId() ) {
+			scrollList();
 		}
-
-		@Override
-		public int getItemViewType( int position ) {
-			if( getViewTypeCount() > 1 ) {
-				if ( position % 4 == 1 ) {
-					return 1;
-				}
+	}	
+	
+	private void scrollList() {
+		listView.smoothScrollBy( 1500, 300 );
+	}
+	
+	private void addElements() {
+		for( int i = 0; i < 5; i++ ) {
+			mAdapter.mItems.add( Math.min( mAdapter.mItems.size(), 2), "Image " + mAdapter.mItems.size() );
+		}
+		mAdapter.notifyDataSetChanged();
+	}
+	
+	private void removeElements() {
+		for( int i = 0; i < 5; i++ ) {
+			if( mAdapter.mItems.size() > 0 ) {
+				mAdapter.mItems.remove( Math.min( mAdapter.mItems.size()-1, 2 ) );
 			}
-			return 0;
+		}
+		mAdapter.notifyDataSetChanged();
+	}
+	
+	private void deleteSelectedItems() {
+		SparseBooleanArray checkedItems = listView.getCheckedItemPositions();
+		ArrayList<Integer> sorted = new ArrayList<Integer>( checkedItems.size() );
+		
+		Log.i( LOG_TAG, "deleting: " + checkedItems.size() );
+		
+		for( int i = 0; i < checkedItems.size(); i++ ) {
+			if( checkedItems.valueAt( i ) ) {
+				sorted.add( checkedItems.keyAt( i ) );
+			}
 		}
 
+		Collections.sort( sorted );
+		
+		for( int i = sorted.size()-1; i >= 0; i-- ) {
+			int position = sorted.get( i );
+			Log.d( LOG_TAG, "Deleting item at: " + position );
+			mAdapter.mItems.remove( position );
+		}
+		mAdapter.notifyDataSetChanged();
+	}
+	
+	class TestAdapter extends ArrayAdapter<String> {
+		
+		List<String> mItems;
+		
+		public TestAdapter( Context context, int resourceId, int textViewResourceId, List<String> objects ) {
+			super( context, resourceId, textViewResourceId, objects );
+			mItems = objects;
+		}
+		
 		@Override
 		public int getViewTypeCount() {
-			return 2;
+			return 3;
 		}
-
+		
+		@Override
+		public int getItemViewType( int position ) {
+			return position%3;
+		}
+		
 		@Override
 		public View getView( int position, View convertView, ViewGroup parent ) {
-
-			View view;
+			
+			View view = super.getView( position, convertView, parent );
+			
+			ImageView image = (ImageView) view.findViewById( R.id.image );
+			
 			int type = getItemViewType( position );
-
-			if ( convertView == null ) {
-				view = LayoutInflater.from( getContext() ).inflate( type == 0 ? resId1 : resId2, parent, false );
-				view.setLayoutParams( new HorizontalVariableListView.LayoutParams(
-						HorizontalVariableListView.LayoutParams.WRAP_CONTENT, HorizontalVariableListView.LayoutParams.WRAP_CONTENT ) );
+			
+			LayoutParams params = view.getLayoutParams();
+			if( type == 0 ) {
+				params.width = 200;
+			} else if( type == 1 ) {
+				params.width = 250;
 			} else {
-				view = convertView;
+				params.width = 300;
 			}
-
-			if ( type == 0 ) {
-				TextView text = (TextView) view.findViewById( R.id.text );
-				text.setText( "Image " + String.valueOf( position ) );
-			}
-
+			
 			return view;
 		}
+	}
 
+	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
+	public boolean onActionItemClicked( ActionMode mode, MenuItem item ) {
+		Log.d( LOG_TAG, "onActionItemClicked: " + item.getItemId() );
+		
+		final int itemId = item.getItemId();
+		if( itemId == 0 ) {
+			deleteSelectedItems();
+		}
+		
+		mode.finish();
+		return false;
+	}
+
+	public boolean onCreateActionMode( ActionMode mode, Menu menu ) {
+		menu.add( 0, 0, 0, "Delete" );
+		return true;
+	}
+
+	public void onDestroyActionMode( ActionMode mode ) {
+		
+	}
+
+	public boolean onPrepareActionMode( ActionMode mode, Menu menu ) {
+		return true;
+	}
+
+	@SuppressLint("NewApi")
+	public void onItemCheckedStateChanged( ActionMode mode, int position, long id, boolean checked ) {
+		mode.setTitle( "What the fuck!" );
+		mode.setSubtitle( "Selected items: " + listView.getCheckedItemCount() );
 	}
 }
